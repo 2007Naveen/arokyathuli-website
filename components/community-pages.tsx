@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { STATES, DISTRICTS, SEED_REPORTS } from "@/lib/data"
+import { STATES, DISTRICTS } from "@/lib/data"
 import { useAuth } from "@/lib/auth-context"
 import { FileText, Send, Search } from "lucide-react"
 import { useState } from "react"
@@ -22,7 +22,7 @@ const statusColors: Record<string, string> = {
 }
 
 export function SubmitReportPage() {
-  const { user } = useAuth()
+  const { user, setReports } = useAuth()
   const [description, setDescription] = useState("")
   const [type, setType] = useState<"water_issue" | "symptoms">("water_issue")
   const [state, setState] = useState("")
@@ -33,8 +33,24 @@ export function SubmitReportPage() {
     e.preventDefault()
     if (!description) return
     const refId = `RPT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`
+    const stateName = STATES.find(s => s.id === state)?.name || ""
+    const districtName = DISTRICTS.find(d => d.id === district)?.name || ""
+    const newReport: Report = {
+      id: `rpt-${Date.now()}`,
+      referenceId: refId,
+      userId: user?.id || "",
+      type,
+      description,
+      status: "submitted",
+      village: village || undefined,
+      district: districtName || undefined,
+      state: stateName || undefined,
+      createdAt: new Date().toISOString(),
+    }
+    setReports(prev => [...prev, newReport])
     toast.success(`Report submitted! Reference ID: ${refId}`)
     setDescription("")
+    setVillage("")
   }
 
   const filteredDistricts = DISTRICTS.filter(d => d.stateId === state)
@@ -110,12 +126,12 @@ export function SubmitReportPage() {
 }
 
 export function MyReportsPage() {
-  const { user } = useAuth()
+  const { user, reports } = useAuth()
   const [searchId, setSearchId] = useState("")
-  const reports = SEED_REPORTS.filter(r => r.userId === user?.id)
+  const myReports = reports.filter(r => r.userId === user?.id)
 
   const searchResult = searchId
-    ? SEED_REPORTS.find(r => r.referenceId.toLowerCase() === searchId.toLowerCase())
+    ? reports.find(r => r.referenceId.toLowerCase() === searchId.toLowerCase())
     : null
 
   return (
@@ -170,15 +186,15 @@ export function MyReportsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-serif text-lg text-card-foreground">
             <FileText className="h-5 w-5 text-[#1B5E20]" />
-            Your Reports ({reports.length})
+            Your Reports ({myReports.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {reports.length === 0 ? (
+          {myReports.length === 0 ? (
             <p className="text-sm text-muted-foreground">You have not submitted any reports yet.</p>
           ) : (
             <div className="flex flex-col gap-3">
-              {reports.map(report => (
+              {myReports.map(report => (
                 <div key={report.id} className="flex items-start justify-between rounded-lg border border-border p-4">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
@@ -206,8 +222,8 @@ export function MyReportsPage() {
 }
 
 export function CommunityDashboard() {
-  const { user } = useAuth()
-  const myReports = SEED_REPORTS.filter(r => r.userId === user?.id)
+  const { user, reports } = useAuth()
+  const myReports = reports.filter(r => r.userId === user?.id)
   const districtId = user?.district
   const district = districtId ? DISTRICTS.find(d => d.id === districtId) : null
 

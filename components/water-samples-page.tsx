@@ -3,10 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { SEED_WATER_SAMPLES, VILLAGES, DISTRICTS, STATES } from "@/lib/data"
+import { DISTRICTS } from "@/lib/data"
+import { useAuth } from "@/lib/auth-context"
 import { Droplets, AlertTriangle, CheckCircle } from "lucide-react"
 
 export function WaterSamplesPage() {
+  const { waterSamples, villages } = useAuth()
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div>
@@ -20,7 +23,7 @@ export function WaterSamplesPage() {
             <Droplets className="h-8 w-8 text-[#4FC3F7]" />
             <div>
               <p className="text-xs text-muted-foreground">Total Samples</p>
-              <p className="text-2xl font-bold text-card-foreground">{SEED_WATER_SAMPLES.length}</p>
+              <p className="text-2xl font-bold text-card-foreground">{waterSamples.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -29,7 +32,7 @@ export function WaterSamplesPage() {
             <AlertTriangle className="h-8 w-8 text-risk-red" />
             <div>
               <p className="text-xs text-muted-foreground">Unsafe</p>
-              <p className="text-2xl font-bold text-card-foreground">{SEED_WATER_SAMPLES.filter(s => s.isUnsafe).length}</p>
+              <p className="text-2xl font-bold text-card-foreground">{waterSamples.filter(s => s.isUnsafe).length}</p>
             </div>
           </CardContent>
         </Card>
@@ -38,7 +41,7 @@ export function WaterSamplesPage() {
             <CheckCircle className="h-8 w-8 text-risk-green" />
             <div>
               <p className="text-xs text-muted-foreground">Safe</p>
-              <p className="text-2xl font-bold text-card-foreground">{SEED_WATER_SAMPLES.filter(s => !s.isUnsafe).length}</p>
+              <p className="text-2xl font-bold text-card-foreground">{waterSamples.filter(s => !s.isUnsafe).length}</p>
             </div>
           </CardContent>
         </Card>
@@ -48,7 +51,7 @@ export function WaterSamplesPage() {
             <div>
               <p className="text-xs text-muted-foreground">Avg Turbidity</p>
               <p className="text-2xl font-bold text-card-foreground">
-                {(SEED_WATER_SAMPLES.reduce((a, s) => a + s.turbidity, 0) / SEED_WATER_SAMPLES.length).toFixed(1)}
+                {waterSamples.length > 0 ? (waterSamples.reduce((a, s) => a + s.turbidity, 0) / waterSamples.length).toFixed(1) : "0"}
               </p>
             </div>
           </CardContent>
@@ -74,8 +77,8 @@ export function WaterSamplesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {SEED_WATER_SAMPLES.map((sample) => {
-                const village = VILLAGES.find(v => v.id === sample.villageId)
+              {waterSamples.map((sample) => {
+                const village = villages.find(v => v.id === sample.villageId)
                 const district = DISTRICTS.find(d => d.id === sample.districtId)
                 return (
                   <TableRow key={sample.id}>

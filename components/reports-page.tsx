@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { SEED_REPORTS } from "@/lib/data"
+import { useAuth } from "@/lib/auth-context"
 import { FileText, Eye, MessageSquare } from "lucide-react"
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -19,7 +19,7 @@ const statusColors: Record<string, string> = {
 }
 
 export function ReportsPage() {
-  const [reports, setReports] = useState(SEED_REPORTS)
+  const { reports, setReports } = useAuth()
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [consultantNote, setConsultantNote] = useState("")
 

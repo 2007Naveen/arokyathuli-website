@@ -6,10 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   STATES,
   DISTRICTS,
-  SEED_WATER_SAMPLES,
-  SEED_REPORTS,
-  SEED_ALERTS,
-  SEED_RISK_SCORES,
   FORECAST_DATA,
   WEEKLY_TREND_DATA,
   getRiskBgClass,
@@ -24,6 +20,7 @@ import {
   FileText,
   TrendingUp,
   Activity,
+  MapPin,
 } from "lucide-react"
 import {
   LineChart,
@@ -44,7 +41,7 @@ import {
 const PIE_COLORS = ["#4CAF50", "#FFC107", "#FF9800", "#F44336"]
 
 export function AdminDashboard() {
-  const { users } = useAuth()
+  const { users, reports, waterSamples, alerts, villages } = useAuth()
   const [selectedState, setSelectedState] = useState("all")
 
   const filteredDistricts = useMemo(() => {
@@ -53,14 +50,14 @@ export function AdminDashboard() {
   }, [selectedState])
 
   const filteredAlerts = useMemo(() => {
-    if (selectedState === "all") return SEED_ALERTS
-    return SEED_ALERTS.filter((a) => a.stateId === selectedState)
-  }, [selectedState])
+    if (selectedState === "all") return alerts
+    return alerts.filter((a) => a.stateId === selectedState)
+  }, [selectedState, alerts])
 
   const filteredSamples = useMemo(() => {
-    if (selectedState === "all") return SEED_WATER_SAMPLES
-    return SEED_WATER_SAMPLES.filter((s) => s.stateId === selectedState)
-  }, [selectedState])
+    if (selectedState === "all") return waterSamples
+    return waterSamples.filter((s) => s.stateId === selectedState)
+  }, [selectedState, waterSamples])
 
   const riskDistribution = useMemo(() => {
     const counts = { Green: 0, Yellow: 0, Orange: 0, Red: 0 }
@@ -84,7 +81,9 @@ export function AdminDashboard() {
   const unsafeSamples = filteredSamples.filter((s) => s.isUnsafe).length
   const totalUsers = users.length
   const criticalAlerts = filteredAlerts.filter((a) => a.severity === "Red").length
-  const pendingReports = SEED_REPORTS.filter((r) => r.status === "submitted").length
+  const pendingReports = reports.filter((r) => r.status === "submitted").length
+  const totalVillages = villages.length
+  const totalReports = reports.length
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
@@ -112,7 +111,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           icon={<Users className="h-5 w-5" />}
           label="Total Users"
@@ -134,9 +133,22 @@ export function AdminDashboard() {
         />
         <StatCard
           icon={<FileText className="h-5 w-5" />}
-          label="Pending Reports"
-          value={pendingReports}
+          label="Total Reports"
+          value={totalReports}
           color="bg-[#1B5E20]"
+          subtitle={`${pendingReports} pending`}
+        />
+        <StatCard
+          icon={<MapPin className="h-5 w-5" />}
+          label="Villages"
+          value={totalVillages}
+          color="bg-[#6A1B9A]"
+        />
+        <StatCard
+          icon={<Activity className="h-5 w-5" />}
+          label="Districts"
+          value={filteredDistricts.length}
+          color="bg-[#00695C]"
         />
       </div>
 

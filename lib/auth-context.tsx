@@ -7,8 +7,8 @@ import {
   useCallback,
   type ReactNode,
 } from "react"
-import type { User, Role, PointActivity, PointAction } from "@/lib/data"
-import { SEED_USERS, SEED_POINT_ACTIVITIES, POINT_VALUES } from "@/lib/data"
+import type { User, Role, PointActivity, PointAction, Report, WaterSample, Alert, Village } from "@/lib/data"
+import { SEED_USERS, SEED_POINT_ACTIVITIES, POINT_VALUES, SEED_REPORTS, SEED_WATER_SAMPLES, SEED_ALERTS, VILLAGES } from "@/lib/data"
 
 // ────────────────────────────────────────────────
 // Auth Context
@@ -35,6 +35,15 @@ interface AuthContextType {
   deleteUser: (userId: string) => { success: boolean; error?: string }
   awardPoints: (userId: string, action: PointAction, description: string) => void
   pointActivities: PointActivity[]
+  // Shared data state
+  reports: Report[]
+  setReports: React.Dispatch<React.SetStateAction<Report[]>>
+  waterSamples: WaterSample[]
+  setWaterSamples: React.Dispatch<React.SetStateAction<WaterSample[]>>
+  alerts: Alert[]
+  setAlerts: React.Dispatch<React.SetStateAction<Alert[]>>
+  villages: Village[]
+  setVillages: React.Dispatch<React.SetStateAction<Village[]>>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -43,6 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>(SEED_USERS)
   const [user, setUser] = useState<User | null>(null)
   const [pointActivities, setPointActivities] = useState<PointActivity[]>(SEED_POINT_ACTIVITIES)
+  const [reports, setReports] = useState<Report[]>(SEED_REPORTS)
+  const [waterSamples, setWaterSamples] = useState<WaterSample[]>(SEED_WATER_SAMPLES)
+  const [alerts, setAlerts] = useState<Alert[]>(SEED_ALERTS)
+  const [villages, setVillages] = useState<Village[]>(VILLAGES)
 
   const login = useCallback(
     (email: string, password: string) => {
@@ -179,6 +192,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         deleteUser,
         awardPoints,
         pointActivities,
+        reports,
+        setReports,
+        waterSamples,
+        setWaterSamples,
+        alerts,
+        setAlerts,
+        villages,
+        setVillages,
       }}
     >
       {children}
