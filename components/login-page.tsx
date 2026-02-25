@@ -102,7 +102,7 @@ export function LoginPage() {
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder="admin@sih25001.com"
+                    placeholder="Enter your email"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
@@ -125,11 +125,6 @@ export function LoginPage() {
                 <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-[#2E7D32]">
                   Sign In
                 </Button>
-                <div className="rounded-lg border border-[#c8e6c9] bg-secondary p-3">
-                  <p className="mb-1 text-xs font-semibold text-muted-foreground">Default Admin Credentials</p>
-                  <p className="font-mono text-xs text-card-foreground">Email: admin@sih25001.com</p>
-                  <p className="font-mono text-xs text-card-foreground">Password: admin@123</p>
-                </div>
               </form>
             </CardContent>
           </TabsContent>

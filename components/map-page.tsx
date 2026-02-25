@@ -4,9 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { VILLAGES, DISTRICTS, STATES, SEED_WATER_SAMPLES, getRiskBgClass } from "@/lib/data"
 import type { RiskCategory } from "@/lib/data"
-import { MapPin } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import dynamic from "next/dynamic"
+
+const LeafletMap = dynamic(() => import("@/components/leaflet-map"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[500px] items-center justify-center rounded-lg bg-muted">
+      <p className="text-sm text-muted-foreground">Loading satellite map...</p>
+    </div>
+  ),
+})
 
 export function MapPage() {
   const [selectedState, setSelectedState] = useState("all")
@@ -21,12 +30,43 @@ export function MapPage() {
     return DISTRICTS.filter(d => d.stateId === selectedState)
   }, [selectedState])
 
+  const markers = useMemo(() => {
+    return filteredVillages.map(village => {
+      const district = DISTRICTS.find(d => d.id === village.districtId)
+      const state = STATES.find(s => s.id === village.stateId)
+      const samples = SEED_WATER_SAMPLES.filter(s => s.villageId === village.id)
+      const latestSample = samples[samples.length - 1]
+      const riskCategory = (district?.riskCategory || "Green") as RiskCategory
+      return {
+        id: village.id,
+        name: village.name,
+        lat: village.latitude,
+        lng: village.longitude,
+        riskCategory,
+        districtName: district?.name || "",
+        stateName: state?.name || "",
+        floodStatus: village.floodStatus,
+        turbidity: latestSample?.turbidity,
+        ph: latestSample?.ph,
+        contamination: latestSample?.contaminationLevel,
+        riskScore: district?.riskScore || 0,
+      }
+    })
+  }, [filteredVillages])
+
+  const center = useMemo(() => {
+    if (markers.length === 0) return { lat: 22, lng: 87 }
+    const avgLat = markers.reduce((s, m) => s + m.lat, 0) / markers.length
+    const avgLng = markers.reduce((s, m) => s + m.lng, 0) / markers.length
+    return { lat: avgLat, lng: avgLng }
+  }, [markers])
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-bold text-foreground">Risk Map</h1>
-          <p className="text-sm text-muted-foreground">Geographical view of health risk across regions</p>
+          <p className="text-sm text-muted-foreground">Satellite view of health risk across regions</p>
         </div>
         <Select value={selectedState} onValueChange={setSelectedState}>
           <SelectTrigger className="w-full md:w-[220px]">
@@ -39,90 +79,38 @@ export function MapPage() {
         </Select>
       </div>
 
-      {/* Map Visualization (Satellite-style placeholder with real data points) */}
+      {/* Satellite Map */}
       <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle className="font-serif text-lg text-card-foreground">Interactive Risk Map</CardTitle>
-          <CardDescription>Villages and districts with risk indicators. Integrate Google Maps API for satellite view.</CardDescription>
+          <CardTitle className="font-serif text-lg text-card-foreground">Satellite Risk Map</CardTitle>
+          <CardDescription>Real-time village risk markers on satellite imagery. Click markers for details.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="relative min-h-[400px] overflow-hidden rounded-lg bg-[#1B5E20]/10 md:min-h-[500px]">
-            {/* Grid-based map visualization */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative h-full w-full">
-                {filteredVillages.map((village) => {
-                  const district = DISTRICTS.find(d => d.id === village.districtId)
-                  const samples = SEED_WATER_SAMPLES.filter(s => s.villageId === village.id)
-                  const latestSample = samples[samples.length - 1]
-                  const riskCategory = district?.riskCategory || "Green"
-
-                  // Normalize coordinates to percentage positions
-                  const minLat = 8, maxLat = 29, minLng = 79, maxLng = 96
-                  const top = ((maxLat - village.latitude) / (maxLat - minLat)) * 100
-                  const left = ((village.longitude - minLng) / (maxLng - minLng)) * 100
-
-                  return (
-                    <div
-                      key={village.id}
-                      className="group absolute"
-                      style={{ top: `${Math.min(90, Math.max(5, top))}%`, left: `${Math.min(90, Math.max(5, left))}%` }}
-                    >
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#ffffff] shadow-lg ${
-                        riskCategory === "Red" ? "bg-risk-red" : riskCategory === "Orange" ? "bg-risk-orange" : riskCategory === "Yellow" ? "bg-risk-yellow" : "bg-risk-green"
-                      }`}>
-                        <MapPin className="h-3 w-3 text-[#ffffff]" />
-                      </div>
-                      {village.floodStatus === "Flood-prone" && (
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-[#4FC3F7] text-[6px] font-bold text-[#ffffff]">F</span>
-                      )}
-                      {/* Tooltip */}
-                      <div className="invisible absolute left-8 top-0 z-10 w-48 rounded-lg border border-border bg-card p-2 shadow-xl group-hover:visible">
-                        <p className="text-xs font-bold text-card-foreground">{village.name}</p>
-                        <p className="text-xs text-muted-foreground">{district?.name}, {STATES.find(s => s.id === village.stateId)?.name}</p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <Badge className={getRiskBgClass(riskCategory as RiskCategory)} variant="secondary">
-                            {riskCategory}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">{village.floodStatus}</span>
-                        </div>
-                        {latestSample && (
-                          <div className="mt-1 text-xs text-muted-foreground">
-                            <p>Turbidity: {latestSample.turbidity} NTU</p>
-                            <p>pH: {latestSample.ph} | Contam: {latestSample.contaminationLevel}%</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-
-                {/* Map legend */}
-                <div className="absolute bottom-3 right-3 rounded-lg border border-border bg-card/90 p-3 backdrop-blur">
-                  <p className="mb-2 text-xs font-bold text-card-foreground">Legend</p>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-risk-green" />
-                      <span className="text-xs text-muted-foreground">Safe (0-40)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-risk-yellow" />
-                      <span className="text-xs text-muted-foreground">Low Risk (41-60)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-risk-orange" />
-                      <span className="text-xs text-muted-foreground">Medium Risk (61-75)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-risk-red" />
-                      <span className="text-xs text-muted-foreground">High Risk (76-100)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-3 w-3 items-center justify-center rounded-full bg-[#4FC3F7] text-[5px] font-bold text-[#ffffff]">F</div>
-                      <span className="text-xs text-muted-foreground">Flood-prone</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="overflow-hidden rounded-lg">
+            <LeafletMap markers={markers} center={center} />
+          </div>
+          {/* Legend */}
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <span className="text-xs font-semibold text-card-foreground">Legend:</span>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-risk-green" />
+              <span className="text-xs text-muted-foreground">Safe (0-40)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-risk-yellow" />
+              <span className="text-xs text-muted-foreground">Low Risk (41-60)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-risk-orange" />
+              <span className="text-xs text-muted-foreground">Medium Risk (61-75)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-risk-red" />
+              <span className="text-xs text-muted-foreground">High Risk (76-100)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="flex h-3 w-3 items-center justify-center rounded-full bg-[#4FC3F7] text-[5px] font-bold text-[#ffffff]">F</div>
+              <span className="text-xs text-muted-foreground">Flood-prone</span>
             </div>
           </div>
         </CardContent>
