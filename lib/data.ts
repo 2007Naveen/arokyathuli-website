@@ -21,6 +21,42 @@ export interface User {
   createdAt: string
   isActive: boolean
   workerStatus?: WorkerStatus
+  points?: number
+}
+
+export interface PointActivity {
+  id: string
+  userId: string
+  action: PointAction
+  points: number
+  description: string
+  timestamp: string
+}
+
+export type PointAction =
+  | "sample_collected"
+  | "report_submitted"
+  | "report_resolved"
+  | "alert_responded"
+  | "community_visit"
+  | "training_completed"
+  | "bonus_awarded"
+
+export const POINT_VALUES: Record<PointAction, { points: number; label: string }> = {
+  sample_collected: { points: 10, label: "Water Sample Collected" },
+  report_submitted: { points: 5, label: "Report Submitted" },
+  report_resolved: { points: 20, label: "Report Resolved" },
+  alert_responded: { points: 15, label: "Alert Responded" },
+  community_visit: { points: 8, label: "Community Visit" },
+  training_completed: { points: 25, label: "Training Completed" },
+  bonus_awarded: { points: 50, label: "Admin Bonus Awarded" },
+}
+
+export function getPointsBadge(points: number): { label: string; color: string } {
+  if (points >= 500) return { label: "Gold", color: "bg-[#FFD700] text-[#1a2e1a]" }
+  if (points >= 250) return { label: "Silver", color: "bg-[#C0C0C0] text-[#1a2e1a]" }
+  if (points >= 100) return { label: "Bronze", color: "bg-[#CD7F32] text-[#ffffff]" }
+  return { label: "Starter", color: "bg-muted text-muted-foreground" }
 }
 
 export interface State {
@@ -239,6 +275,7 @@ export const SEED_USERS: User[] = [
     createdAt: "2025-03-01T00:00:00Z",
     isActive: true,
     workerStatus: "approved",
+    points: 185,
   },
   {
     id: "usr-hw-002",
@@ -253,6 +290,7 @@ export const SEED_USERS: User[] = [
     createdAt: "2025-03-15T00:00:00Z",
     isActive: true,
     workerStatus: "pending",
+    points: 0,
   },
   {
     id: "usr-cm-001",
@@ -384,3 +422,28 @@ export function getRiskBgClass(category: RiskCategory) {
     case "Red": return "bg-risk-red text-[#ffffff]"
   }
 }
+
+// ────────────────────────────────────────────────
+// SEED POINT ACTIVITIES
+// ────────────────────────────────────────────────
+
+export const SEED_POINT_ACTIVITIES: PointActivity[] = [
+  { id: "pa1", userId: "usr-hw-001", action: "sample_collected", points: 10, description: "Collected water sample from Raha village", timestamp: "2025-06-10T08:30:00Z" },
+  { id: "pa2", userId: "usr-hw-001", action: "sample_collected", points: 10, description: "Collected water sample from Howly village", timestamp: "2025-06-15T09:00:00Z" },
+  { id: "pa3", userId: "usr-hw-001", action: "report_resolved", points: 20, description: "Resolved contamination report RPT-2025-0003", timestamp: "2025-06-16T14:00:00Z" },
+  { id: "pa4", userId: "usr-hw-001", action: "alert_responded", points: 15, description: "Responded to Barpeta contamination alert", timestamp: "2025-06-15T13:00:00Z" },
+  { id: "pa5", userId: "usr-hw-001", action: "community_visit", points: 8, description: "Conducted awareness visit at Raha primary school", timestamp: "2025-06-18T10:00:00Z" },
+  { id: "pa6", userId: "usr-hw-001", action: "sample_collected", points: 10, description: "Collected water sample from Velachery", timestamp: "2025-06-18T11:00:00Z" },
+  { id: "pa7", userId: "usr-hw-001", action: "sample_collected", points: 10, description: "Collected water sample from Sila village", timestamp: "2025-06-22T09:30:00Z" },
+  { id: "pa8", userId: "usr-hw-001", action: "sample_collected", points: 10, description: "Collected water sample from Mawsynram", timestamp: "2025-06-25T08:00:00Z" },
+  { id: "pa9", userId: "usr-hw-001", action: "training_completed", points: 25, description: "Completed water quality testing certification", timestamp: "2025-05-20T15:00:00Z" },
+  { id: "pa10", userId: "usr-hw-001", action: "community_visit", points: 8, description: "Door-to-door hygiene awareness in Lakhipur", timestamp: "2025-06-20T09:00:00Z" },
+  { id: "pa11", userId: "usr-hw-001", action: "report_submitted", points: 5, description: "Submitted field report for Nagaon district", timestamp: "2025-06-11T16:00:00Z" },
+  { id: "pa12", userId: "usr-hw-001", action: "sample_collected", points: 10, description: "Collected water sample from West Garo Hills", timestamp: "2025-06-28T10:45:00Z" },
+  { id: "pa13", userId: "usr-hw-001", action: "alert_responded", points: 15, description: "Responded to Nagaon turbidity alert", timestamp: "2025-06-10T15:00:00Z" },
+  { id: "pa14", userId: "usr-hw-001", action: "sample_collected", points: 10, description: "Collected sample from Nagapattinam Town", timestamp: "2025-06-20T14:30:00Z" },
+  { id: "pa15", userId: "usr-hw-001", action: "report_submitted", points: 5, description: "Submitted weekly monitoring report", timestamp: "2025-06-22T17:00:00Z" },
+  { id: "pa16", userId: "usr-hw-001", action: "community_visit", points: 8, description: "Health camp at Howly village", timestamp: "2025-06-25T11:00:00Z" },
+  { id: "pa17", userId: "usr-hw-001", action: "report_submitted", points: 5, description: "Submitted contamination follow-up report", timestamp: "2025-06-27T10:00:00Z" },
+  { id: "pa18", userId: "usr-hw-001", action: "community_visit", points: 8, description: "Awareness drive at Tura market area", timestamp: "2025-06-28T14:00:00Z" },
+]

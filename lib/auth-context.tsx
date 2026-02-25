@@ -7,8 +7,8 @@ import {
   useCallback,
   type ReactNode,
 } from "react"
-import type { User, Role } from "@/lib/data"
-import { SEED_USERS } from "@/lib/data"
+import type { User, Role, PointActivity, PointAction } from "@/lib/data"
+import { SEED_USERS, SEED_POINT_ACTIVITIES, POINT_VALUES } from "@/lib/data"
 
 // ────────────────────────────────────────────────
 // Auth Context
@@ -32,6 +32,9 @@ interface AuthContextType {
   users: User[]
   approveWorker: (userId: string) => void
   rejectWorker: (userId: string) => void
+  deleteUser: (userId: string) => { success: boolean; error?: string }
+  awardPoints: (userId: string, action: PointAction, description: string) => void
+  pointActivities: PointActivity[]
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -39,6 +42,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>(SEED_USERS)
   const [user, setUser] = useState<User | null>(null)
+  const [pointActivities, setPointActivities] = useState<PointActivity[]>(SEED_POINT_ACTIVITIES)
 
   const login = useCallback(
     (email: string, password: string) => {
@@ -123,6 +127,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  const deleteUser = useCallback(
+    (userId: string) => {
+      const target = users.find((u) => u.id === userId)
+      if (!target) return { success: false, error: "User not found" }
+      if (target.id === "usr-admin-001") {
+        return { success: false, error: "Cannot delete the primary Super Admin" }
+      }
+      if (user?.id === userId) {
+        return { success: false, error: "Cannot delete your own account" }
+      }
+      setUsers((prev) => prev.filter((u) => u.id !== userId))
+      setPointActivities((prev) => prev.filter((pa) => pa.userId !== userId))
+      return { success: true }
+    },
+    [users, user]
+  )
+
+  const awardPoints = useCallback(
+    (userId: string, action: PointAction, description: string) => {
+      const pts = POINT_VALUES[action].points
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId ? { ...u, points: (u.points || 0) + pts } : u
+        )
+      )
+      const newActivity: PointActivity = {
+        id: `pa-${Date.now()}`,
+        userId,
+        action,
+        points: pts,
+        description,
+        timestamp: new Date().toISOString(),
+      }
+      setPointActivities((prev) => [...prev, newActivity])
+    },
+    []
+  )
+
   return (
     <AuthContext.Provider
       value={{
@@ -134,6 +176,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         users,
         approveWorker,
         rejectWorker,
+        deleteUser,
+        awardPoints,
+        pointActivities,
       }}
     >
       {children}
