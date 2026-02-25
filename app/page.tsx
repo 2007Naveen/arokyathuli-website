@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { AuthProvider, useAuth } from "@/lib/auth-context"
 import { LoginPage } from "@/components/login-page"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -20,7 +21,6 @@ import {
   CommunityDashboard,
 } from "@/components/community-pages"
 import { ChatbotWidget } from "@/components/chatbot-widget"
-import { useState } from "react"
 
 function AppContent() {
   const { isAuthenticated, user } = useAuth()
